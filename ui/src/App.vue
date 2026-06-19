@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 interface LineItem {
   item_description: string;
@@ -20,6 +20,11 @@ const busy = ref(false);
 const invoice = ref<Invoice | null>(null);
 const savedId = ref<string>('');
 const error = ref<string>('');
+
+// Hands-free mode: when on, a successful extraction is saved to GHL immediately
+// (no review click). Preference persists across sessions.
+const autoSave = ref(localStorage.getItem('voxlink_autosave') === '1');
+watch(autoSave, (v) => localStorage.setItem('voxlink_autosave', v ? '1' : '0'));
 
 // --- GHL Custom Page SSO: ask the parent CRM for the encrypted session. ---
 onMounted(() => {
@@ -59,7 +64,13 @@ async function onFile(e: Event) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? 'Extraction failed');
     invoice.value = data.invoice;
-    status.value = 'Review the extracted data, then save to GoHighLevel.';
+    if (autoSave.value && locationId.value) {
+      await save();
+    } else {
+      status.value = autoSave.value
+        ? 'Extracted, but no location context — review and save manually.'
+        : 'Review the extracted data, then save to GoHighLevel.';
+    }
   } catch (err) {
     error.value = (err as Error).message;
     status.value = '';
@@ -113,6 +124,11 @@ function removeLine(i: number) {
       <span>Choose an invoice (PDF or image)</span>
     </label>
 
+    <label class="autosave">
+      <input type="checkbox" v-model="autoSave" :disabled="busy" />
+      Auto-save after extraction (hands-free)
+    </label>
+
     <p v-if="error" class="error">{{ error }}</p>
 
     <section v-if="invoice" class="review">
@@ -154,7 +170,9 @@ h1 { font-size: 1.4rem; margin-bottom: 0.15rem; }
 .status { color: #555; }
 .error { color: #b00020; }
 .ok { color: #0a7c2f; margin-left: 0.75rem; }
-.upload { display: inline-block; margin: 0.5rem 0 1rem; }
+.upload { display: inline-block; margin: 0.5rem 0 0.5rem; }
+.autosave { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: #333; margin-bottom: 1rem; cursor: pointer; }
+.autosave input { width: auto; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.25rem; }
 input { padding: 0.4rem; border: 1px solid #ccc; border-radius: 6px; }

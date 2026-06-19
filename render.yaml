@@ -1,0 +1,39 @@
+# Render Blueprint — one-click deploy of Voxlink Invoice Pro + Postgres.
+# In Render: New → Blueprint → point at this repo. Fill the `sync: false` secrets
+# in the dashboard after the first deploy, then set APP_BASE_URL/GHL_REDIRECT_URI
+# to the service's live URL and redeploy.
+services:
+  - type: web
+    name: voxlink-invoice-pro
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: voxlink-invoice-db
+          property: connectionString
+      - key: GHL_API_BASE
+        value: https://services.leadconnectorhq.com
+      - key: GHL_API_VERSION
+        value: 2021-07-28
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-6
+      # --- Fill these in the Render dashboard (secrets / per-environment) ---
+      - key: APP_BASE_URL
+        sync: false
+      - key: GHL_REDIRECT_URI
+        sync: false
+      - key: GHL_CLIENT_ID
+        sync: false
+      - key: GHL_CLIENT_SECRET
+        sync: false
+      - key: GHL_SSO_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+databases:
+  - name: voxlink-invoice-db
+    plan: starter

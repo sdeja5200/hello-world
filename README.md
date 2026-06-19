@@ -64,12 +64,33 @@ npm run typecheck
 
 ## Deploy
 
-Any Node host works; Render/Railway are easiest (managed Postgres + HTTPS):
+The app ships a multi-stage **Dockerfile** (builds the UI + backend, runs DB
+migrations on boot via `prisma migrate deploy`). Both platforms below use it and
+give you a live HTTPS URL + managed Postgres.
 
-1. Provision Postgres, set `DATABASE_URL`.
-2. Build: `npm run ui:build && npm run build` — start: `npm start`.
-3. Set all `.env` values; `APP_BASE_URL` must be the public HTTPS URL.
-4. Run `prisma migrate deploy` on release.
+### Render (Blueprint — easiest)
+
+1. Push this repo to GitHub, then in Render: **New → Blueprint** and select the repo.
+   `render.yaml` provisions the web service (Docker) **and** a Postgres database,
+   and wires `DATABASE_URL` automatically.
+2. After the first deploy, fill the dashboard secrets (`sync: false` in the blueprint):
+   `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_SSO_KEY`, `ANTHROPIC_API_KEY`.
+3. Copy the service's live URL → set `APP_BASE_URL` and `GHL_REDIRECT_URI`
+   (`{APP_BASE_URL}/oauth/callback`), then redeploy.
+
+### Railway
+
+1. **New Project → Deploy from GitHub repo** (Railway auto-detects the Dockerfile via
+   `railway.json`). Add a **Postgres** plugin; reference its `DATABASE_URL`.
+2. Set the same env vars (`APP_BASE_URL`, `GHL_REDIRECT_URI`, `GHL_CLIENT_ID/SECRET`,
+   `GHL_SSO_KEY`, `ANTHROPIC_API_KEY`).
+3. Generate a public domain; use it for `APP_BASE_URL`.
+
+> The container runs `prisma migrate deploy` on startup, so the `Installation`
+> table is created automatically on first boot — no manual migration step.
+
+Then plug the live URL into the GHL developer portal (redirect URL, Custom Page,
+webhook) as described above.
 
 ## Path to marketplace approval
 
@@ -80,7 +101,8 @@ Any Node host works; Render/Railway are easiest (managed Postgres + HTTPS):
 ## Status / roadmap
 
 - [x] Backend scaffold: OAuth, token store + refresh, webhooks, extract, invoice write
-- [x] Vue Custom Page: SSO, upload, review, save
+- [x] Vue Custom Page: SSO, upload, review, save, hands-free auto-save toggle
+- [x] Deploy config: Dockerfile, Render Blueprint, Railway config, initial migration
 - [ ] Verify GHL Custom Objects API shape + scope strings against a live test sub-account
 - [ ] Promote line items from serialized JSON to a child "Invoice Line Item" object
 - [ ] Optional: link a vendor Contact; add a Workflow Action surface
