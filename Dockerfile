@@ -37,11 +37,6 @@ RUN npx prisma generate
 COPY --from=build /app/dist ./dist
 COPY --from=ui /app/ui/dist ./ui/dist
 
-# Entrypoint script — validates DATABASE_URL before running migrations.
-COPY scripts/start.sh ./start.sh
-RUN chmod +x ./start.sh
-
 EXPOSE 3000
-# start.sh validates DATABASE_URL, skips migrations if the Railway variable
-# reference hasn't resolved yet, then starts the Node server.
-CMD ["./start.sh"]
+# Apply pending migrations, then start. `migrate deploy` is safe/idempotent.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
