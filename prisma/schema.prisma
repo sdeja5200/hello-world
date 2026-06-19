@@ -1,0 +1,30 @@
+// Prisma schema — multi-tenant token/installation store.
+// Production: Postgres. For local dev you can switch `provider` to "sqlite"
+// and DATABASE_URL to "file:./dev.db".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One row per GHL install (a sub-account/location, or an agency/company).
+/// Tokens are short-lived; `expiresAt` drives proactive refresh.
+model Installation {
+  id            String   @id @default(cuid())
+  /// "Location" (sub-account) or "Company" (agency) install.
+  userType      String
+  ghlCompanyId  String?
+  ghlLocationId String?  @unique
+  accessToken   String
+  refreshToken  String
+  expiresAt     DateTime
+  scope         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ghlCompanyId])
+}
