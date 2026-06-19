@@ -10,6 +10,7 @@ RUN npm run build
 
 # ---- Build the TypeScript backend ----
 FROM node:22-slim AS build
+ENV CHECKPOINT_DISABLE=1
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -22,6 +23,9 @@ RUN npm run build
 # ---- Lean runtime image ----
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production
+# Prisma's update-checkpoint ping can hang in network-restricted hosts (e.g. Railway),
+# stalling the CLI well past the platform's healthcheck timeout. Disable it.
+ENV CHECKPOINT_DISABLE=1
 WORKDIR /app
 
 # OpenSSL is required by Prisma's query engine.
