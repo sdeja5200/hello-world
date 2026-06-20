@@ -15,7 +15,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
@@ -35,7 +35,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 
 # Compiled backend + built UI assets.
 COPY --from=build /app/dist ./dist
@@ -43,4 +43,6 @@ COPY --from=ui /app/ui/dist ./ui/dist
 
 EXPOSE 3000
 # Apply pending migrations, then start. `migrate deploy` is safe/idempotent.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+# Call the local binary directly (skip npx's own resolution/network checks) and
+# exec into node so it replaces the shell as PID 1 and receives signals correctly.
+CMD ["sh", "-c", "echo '[start] running migrations...' && ./node_modules/.bin/prisma migrate deploy && echo '[start] migrations done, starting server...' && exec node dist/index.js"]
