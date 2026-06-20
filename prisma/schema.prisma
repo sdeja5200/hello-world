@@ -3,7 +3,13 @@
 // and DATABASE_URL to "file:./dev.db".
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Pin engine targets explicitly. On Debian-slim Docker images Prisma's
+  // libssl auto-detection can fail and bundle the wrong (openssl-1.1.x)
+  // query engine, which then fails to load at runtime and crashes the app
+  // before it can listen. `debian-openssl-3.0.x` matches node:22-slim
+  // (Debian 12 / OpenSSL 3.x); `native` keeps local dev working.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
