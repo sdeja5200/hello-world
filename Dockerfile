@@ -20,17 +20,18 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# ---- Lean runtime image ----
-FROM node:22-slim AS runtime
+# ---- Runtime image ----
+# Use the full node:22 (Debian bookworm) image, NOT -slim. On -slim, Prisma's
+# libssl/openssl auto-detection fails and bundles the openssl-1.1.x query
+# engine, which cannot load on this OpenSSL-3 system — crashing the app the
+# moment `new PrismaClient()` runs, before it can listen. The full image ships
+# OpenSSL 3.x properly configured so detection picks debian-openssl-3.0.x.
+FROM node:22 AS runtime
 ENV NODE_ENV=production
 # Prisma's update-checkpoint ping can hang in network-restricted hosts (e.g. Railway),
 # stalling the CLI well past the platform's healthcheck timeout. Disable it.
 ENV CHECKPOINT_DISABLE=1
 WORKDIR /app
-
-# OpenSSL is required by Prisma's query engine.
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
-  && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci --omit=dev
