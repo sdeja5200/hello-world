@@ -43,7 +43,6 @@ COPY --from=build /app/dist ./dist
 COPY --from=ui /app/ui/dist ./ui/dist
 
 EXPOSE 3000
-# Apply pending migrations, then start. `migrate deploy` is safe/idempotent.
-# Call the local binary directly (skip npx's own resolution/network checks) and
-# exec into node so it replaces the shell as PID 1 and receives signals correctly.
-CMD ["sh", "-c", "echo '[start] running migrations...' && ./node_modules/.bin/prisma migrate deploy && echo '[start] migrations done, starting server...' && exec node dist/index.js"]
+# Just start the server. Database migrations are run separately via Railway's
+# `preDeployCommand` (see railway.json) so they can't stall the healthcheck.
+CMD ["node", "dist/index.js"]
