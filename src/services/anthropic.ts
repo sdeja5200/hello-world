@@ -10,12 +10,11 @@ const PDF_MIME = 'application/pdf';
 const IMAGE_MIMES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 
 /**
- * Extract structured invoice data from a raw file buffer.
- *
- * Unlike the n8n prototype (which text-extracted the PDF first, then asked the
- * LLM to parse text), we send the document to Claude natively. That handles
- * scanned PDFs and images out of the box — the foundation for the "many
- * document types" goal — and removes a whole failure-prone step.
+ * Extract structured data from a raw file buffer — an invoice, estimate,
+ * purchase order, proposal, or prior invoice. Unlike the n8n prototype (which
+ * text-extracted the PDF first, then asked the LLM to parse text), we send
+ * the document to Claude natively. That handles scanned PDFs and images out
+ * of the box and removes a whole failure-prone step.
  */
 export async function extractInvoice(file: Buffer, mimeType: string): Promise<Invoice> {
   const source = buildSource(file, mimeType);
@@ -39,7 +38,11 @@ export async function extractInvoice(file: Buffer, mimeType: string): Promise<In
             source,
             {
               type: 'text',
-              text: 'Extract every field and all line items from this invoice into the record_invoice tool. Use null for any value you cannot find. Do not invent data.',
+              text:
+                'This document could be a vendor invoice, an estimate/quote, a purchase order, a proposal, or some other billing-related document. ' +
+                'First classify it via document_type. Then extract every field and all line items into the record_invoice tool — set both ' +
+                'vendor_name and counterparty_name to the name of the other party on the document (whoever issued it, or whoever it is addressed ' +
+                'to, depending on the document). Use null for any value you cannot find. Do not invent data.',
             },
           ],
         },

@@ -136,6 +136,135 @@ export async function createInvoiceRecord(
   return { id: created.record?.id ?? created.id ?? 'unknown' };
 }
 
+export interface GhlContact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+/**
+ * Find candidate Contacts by name/email for the "bill to" picker. The v2
+ * advanced-search endpoint's request shape isn't fully specified in GHL's
+ * published OpenAPI spec (its schema is a generic object) — this filter
+ * shape matches their documented v2 search pattern but should be confirmed
+ * against a live test sub-account.
+ */
+export async function searchContacts(
+  inst: Installation,
+  locationId: string,
+  query: string,
+): Promise<GhlContact[]> {
+  const res = await ghlFetch<{ contacts?: Array<Record<string, unknown>> }>(inst, '/contacts/search', {
+    method: 'POST',
+    body: JSON.stringify({ locationId, query, pageLimit: 10 }),
+  });
+  return (res.contacts ?? []).map(toGhlContact);
+}
+
+export async function createContact(
+  inst: Installation,
+  locationId: string,
+  data: { name: string; email?: string; phone?: string },
+): Promise<GhlContact> {
+  const res = await ghlFetch<{ contact: Record<string, unknown> }>(inst, '/contacts/', {
+    method: 'POST',
+    body: JSON.stringify({ locationId, name: data.name, email: data.email, phone: data.phone }),
+  });
+  return toGhlContact(res.contact);
+}
+
+function toGhlContact(c: Record<string, unknown>): GhlContact {
+  return {
+    id: String(c.id ?? ''),
+    name: String(c.name ?? c.contactName ?? ''),
+    email: String(c.email ?? ''),
+    phone: String(c.phone ?? ''),
+  };
+}
+
+const DEFAULT_CURRENCY = 'USD'; // TODO: make per-location once multi-currency is needed.
+
+/** Map our extracted line items to GHL's invoice/estimate item shape. */
+function toGhlItems(invoice: Invoice) {
+  return invoice.line_items.map((li) => ({
+    name: li.item_description || 'Item',
+    description: li.item_description || undefined,
+    currency: DEFAULT_CURRENCY,
+    amount: li.price ?? 0,
+    qty: li.quantity ?? 1,
+  }));
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Create a real GHL **Invoice** (services.leadconnectorhq.com `/invoices/`),
+ * not the custom-object record `createInvoiceRecord` writes. This is what
+ * shows up in the sub-account's actual Invoicing/Payments UI and can be sent
+ * to and paid by the contact. Requires scope `invoices.write`.
+ */
+export async function createGhlInvoice(
+  inst: Installation,
+  locationId: string,
+  contact: GhlContact,
+  invoice: Invoice,
+): Promise<{ id: string }> {
+  const title = invoice.counterparty_name || invoice.vendor_name || 'Invoice';
+  const created = await ghlFetch<{ _id?: string; id?: string }>(inst, '/invoices/', {
+    method: 'POST',
+    body: JSON.stringify({
+      altId: locationId,
+      altType: 'location',
+      name: `Invoice for ${title}`,
+      businessDetails: {},
+      currency: DEFAULT_CURRENCY,
+      items: toGhlItems(invoice),
+      discount: { type: 'percentage', value: 0 },
+      contactDetails: { id: contact.id, name: contact.name, email: contact.email, phoneNo: contact.phone },
+      invoiceNumber: invoice.invoice_number || undefined,
+      issueDate: invoice.invoice_date || todayIso(),
+      sentTo: { email: [contact.email] },
+      liveMode: true,
+    }),
+  });
+  return { id: created._id ?? created.id ?? 'unknown' };
+}
+
+/**
+ * Create a real GHL **Estimate** (`/invoices/estimate`). Requires scope
+ * `invoices/estimate.write` (separate from `invoices.write`). `frequencySettings`
+ * is required by GHL's schema even for a one-off estimate — `{ enabled: false }`
+ * is the non-recurring case.
+ */
+export async function createGhlEstimate(
+  inst: Installation,
+  locationId: string,
+  contact: GhlContact,
+  invoice: Invoice,
+): Promise<{ id: string }> {
+  const title = invoice.counterparty_name || invoice.vendor_name || 'Estimate';
+  const created = await ghlFetch<{ _id?: string; id?: string }>(inst, '/invoices/estimate', {
+    method: 'POST',
+    body: JSON.stringify({
+      altId: locationId,
+      altType: 'location',
+      name: `Estimate for ${title}`,
+      businessDetails: {},
+      currency: DEFAULT_CURRENCY,
+      items: toGhlItems(invoice),
+      discount: { type: 'percentage', value: 0 },
+      contactDetails: { id: contact.id, name: contact.name, email: contact.email, phoneNo: contact.phone },
+      issueDate: invoice.invoice_date || todayIso(),
+      liveMode: true,
+      frequencySettings: { enabled: false, schedule: {} },
+    }),
+  });
+  return { id: created._id ?? created.id ?? 'unknown' };
+}
+
 async function requestToken(params: Record<string, string>): Promise<TokenResponse> {
   const body = new URLSearchParams({
     client_id: config.ghl.clientId,

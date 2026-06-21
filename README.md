@@ -2,10 +2,16 @@
 
 **Automated AI invoice parsing and line-item data extraction for your CRM.**
 
-A GoHighLevel Marketplace app. Upload an invoice (PDF or image) inside a GoHighLevel
-sub-account, have Claude extract the vendor, number, date, total, and line items,
-review the result, and save it as an **Invoice** custom-object record — all
-multi-tenant and OAuth-based, built to be submitted to the GHL Marketplace.
+A GoHighLevel Marketplace app. Upload any billing-related document — an estimate,
+purchase order, proposal, prior invoice, or incoming vendor invoice — inside a
+GoHighLevel sub-account, have Claude extract the vendor/counterparty, line items,
+quantities, and totals, then either:
+- create a real **GHL Invoice or Estimate** (visible/payable in the sub-account's
+  own Invoicing UI), after picking or creating the contact to bill, or
+- log it as a vendor bill in an **Invoice** custom-object record (the original,
+  secondary inbound-AP-capture feature).
+
+All multi-tenant and OAuth-based, built to be submitted to the GHL Marketplace.
 
 This is the production rebuild of an n8n prototype; the n8n workflow remains the
 functional spec for the extraction + mapping logic.
@@ -21,7 +27,9 @@ Express + TypeScript backend
   ├─ /oauth/callback   exchange code → persist tokens (Prisma)
   ├─ /webhooks         INSTALL / UNINSTALL lifecycle
   ├─ /api/extract      file → Claude (native doc input + tool-use schema, zod-validated)
-  └─ /api/invoices     ensure "Invoice" custom object → create record (GHL v2)
+  ├─ /api/contacts     search / create the "bill to" contact
+  ├─ /api/ghl-invoices, /api/ghl-estimates   create a real GHL Invoice/Estimate
+  └─ /api/invoices     secondary: ensure "Invoice" custom object → log vendor bill (GHL v2)
   ▼
 Postgres (Prisma)   one row per install, short-lived tokens auto-refreshed
 ```
@@ -53,11 +61,13 @@ npm run typecheck
 1. **Create app** → *My Apps → Create App* (type **Public** for the marketplace).
 2. **Redirect URL**: `{APP_BASE_URL}/oauth/callback` → put the same value in `GHL_REDIRECT_URI`.
 3. **Scopes** (request only what's used — scope changes trigger re-review):
-   - `contacts.readonly`, `contacts.write`
-   - `objects/schema.readonly`, `objects/schema.write`
-   - `objects/record.readonly`, `objects/record.write`
+   - `contacts.readonly`, `contacts.write` — resolve/create the "bill to" contact
+   - `objects/schema.readonly`, `objects/schema.write` — secondary vendor-bill log (custom object)
+   - `objects/record.readonly`, `objects/record.write` — secondary vendor-bill log (custom object)
+   - `invoices.readonly`, `invoices.write` — create real GHL Invoices
+   - `invoices/estimate.readonly`, `invoices/estimate.write` — create real GHL Estimates (separate scope from invoices)
    - `locations.readonly`
-   > Verify exact scope strings in the portal; they occasionally change.
+   > Confirmed against GHL's published OpenAPI spec (`GoHighLevel/highlevel-api-docs`); verify once more in the dev portal at app-creation time since scopes occasionally change.
 4. **Custom Page**: add a page pointing at `{APP_BASE_URL}`; copy the **SSO Key** into `GHL_SSO_KEY`.
 5. **Webhook**: point lifecycle events at `{APP_BASE_URL}/webhooks`.
 6. Copy **Client ID / Client Secret** into `.env`.
@@ -103,7 +113,11 @@ webhook) as described above.
 - [x] Backend scaffold: OAuth, token store + refresh, webhooks, extract, invoice write
 - [x] Vue Custom Page: SSO, upload, review, save, hands-free auto-save toggle
 - [x] Deploy config: Dockerfile, Render Blueprint, Railway config, initial migration
+- [x] Multi-document-type extraction (invoice/estimate/PO/proposal classification)
+- [x] Real GHL Invoice + Estimate creation (`/api/ghl-invoices`, `/api/ghl-estimates`) + contact picker
+- [ ] Verify the new Invoice/Estimate/Contact payload shapes live against a test sub-account
+  (request bodies are built from GHL's published OpenAPI spec, not yet a live call)
 - [ ] Verify GHL Custom Objects API shape + scope strings against a live test sub-account
 - [ ] Promote line items from serialized JSON to a child "Invoice Line Item" object
-- [ ] Optional: link a vendor Contact; add a Workflow Action surface
+- [ ] Optional: GHL Workflow Action surface ("create invoice from this document")
 - [ ] Marketplace submission assets
