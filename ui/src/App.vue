@@ -86,8 +86,8 @@ async function createNewContact() {
 
 // Hands-free mode: when on, a successful extraction is saved to GHL immediately
 // (no review click). Preference persists across sessions.
-const autoSave = ref(localStorage.getItem('voxlink_autosave') === '1');
-watch(autoSave, (v) => localStorage.setItem('voxlink_autosave', v ? '1' : '0'));
+const autoSave = ref(localStorage.getItem('billwright_autosave') === '1');
+watch(autoSave, (v) => localStorage.setItem('billwright_autosave', v ? '1' : '0'));
 
 // --- GHL Custom Page SSO: ask the parent CRM for the encrypted session. ---
 onMounted(() => {
@@ -204,8 +204,8 @@ function removeLine(i: number) {
 
 <template>
   <main class="wrap">
-    <h1>Voxlink Invoice Pro</h1>
-    <p class="tagline">Turn any document into a fully-populated GoHighLevel Invoice or Estimate.</p>
+    <h1>BillWright</h1>
+    <p class="tagline">Turn any document into a fully-populated GoHighLevel invoice or estimate.</p>
     <p class="status">{{ status }}</p>
 
     <label class="upload">

@@ -19,7 +19,7 @@ oauthRouter.get('/callback', async (req, res) => {
     console.log(`[oauth] Installed for location=${inst.ghlLocationId} company=${inst.ghlCompanyId}`);
     res.send(
       '<html><body style="font-family:sans-serif;padding:2rem">' +
-        '<h2>✅ Voxlink Invoice Pro installed</h2>' +
+        '<h2>✅ BillWright installed</h2>' +
         '<p>You can close this tab and open the app from the GoHighLevel menu.</p>' +
         '</body></html>',
     );

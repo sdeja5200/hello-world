@@ -1,16 +1,18 @@
-# Marketplace Listing — Voxlink Invoice Pro
+# Marketplace Listing — BillWright
 
 Source of truth for the GHL Marketplace submission copy and assets.
 
 ## Core copy
 
-- **App name:** Voxlink Invoice Pro
-- **Tagline:** Turn any document into a fully-populated GoHighLevel Invoice or Estimate.
+- **App name:** BillWright
+- **Publisher:** Voxlink
+- **Tagline:** Turn any document into a fully-populated GoHighLevel invoice or estimate.
 - **Description:**
   > Upload an estimate, purchase order, signed proposal, prior invoice, or incoming vendor
-  > invoice — Voxlink extracts the vendor/customer, line items, quantities, and totals with
-  > AI, then creates a fully-populated GoHighLevel Invoice or Estimate with correct line
-  > items, ready to send. Inbound vendor-bill capture is also supported as a secondary mode.
+  > invoice — BillWright builds a fully-populated GoHighLevel Invoice or Estimate, complete
+  > with correct line items, quantities, tax, and totals, ready to send. It's a billing
+  > builder, not a data extractor: you get a finished invoice/estimate, not raw variables
+  > to map yourself. Inbound vendor-bill capture is also supported as a secondary mode.
 
 ## Positioning (why this framing)
 
@@ -21,6 +23,13 @@ submission," "custom values won't populate the line-item price field"). Inbound
 vendor-invoice/receipt OCR is real but niche by comparison. The extraction engine is the
 same either way — only the output target changes (real GHL Invoice/Estimate vs. a
 vendor-bill log record).
+
+**BillWright is a billing builder, not a generic document parser** — and explicitly not
+the same thing as GHL's native "AI Extract Data" workflow action. That action (and most
+parsing tools) hand you raw extracted variables that you still have to map into a price
+field, line-item row, etc. BillWright skips that step: it hands back a finished, native
+GHL Invoice or Estimate object — line items, quantities, tax, and totals already in
+place — ready to review and send.
 
 ## Submission checklist (GHL)
 

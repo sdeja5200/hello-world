@@ -1,10 +1,10 @@
-# Render Blueprint — one-click deploy of Voxlink Invoice Pro + Postgres.
+# Render Blueprint — one-click deploy of BillWright + Postgres.
 # In Render: New → Blueprint → point at this repo. Fill the `sync: false` secrets
 # in the dashboard after the first deploy, then set APP_BASE_URL/GHL_REDIRECT_URI
 # to the service's live URL and redeploy.
 services:
   - type: web
-    name: voxlink-invoice-pro
+    name: billwright
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: starter
@@ -12,7 +12,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: voxlink-invoice-db
+          name: billwright-db
           property: connectionString
       - key: GHL_API_BASE
         value: https://services.leadconnectorhq.com
@@ -35,5 +35,5 @@ services:
         sync: false
 
 databases:
-  - name: voxlink-invoice-db
+  - name: billwright-db
     plan: starter

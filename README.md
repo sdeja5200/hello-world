@@ -1,6 +1,6 @@
-# Voxlink Invoice Pro
+# BillWright
 
-**Automated AI invoice parsing and line-item data extraction for your CRM.**
+**Turn any document into a fully-populated GoHighLevel invoice or estimate.**
 
 A GoHighLevel Marketplace app. Upload any billing-related document — an estimate,
 purchase order, proposal, prior invoice, or incoming vendor invoice — inside a

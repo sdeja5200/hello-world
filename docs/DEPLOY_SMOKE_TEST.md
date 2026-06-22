@@ -1,6 +1,6 @@
 # First Deploy — Smoke Test & Environment Variables
 
-Run this the first time you bring Voxlink Invoice Pro up on Railway/Render.
+Run this the first time you bring BillWright up on Railway/Render.
 
 ## Environment variables
 
@@ -20,7 +20,7 @@ fill in once the platform gives you a live URL — then redeploy).
 
 | Variable | Value |
 | --- | --- |
-| `APP_BASE_URL` | The live HTTPS URL the platform assigns (e.g. `https://voxlink-invoice-pro.onrender.com`) |
+| `APP_BASE_URL` | The live HTTPS URL the platform assigns (e.g. `https://billwright.onrender.com`) |
 | `GHL_REDIRECT_URI` | `{APP_BASE_URL}/oauth/callback` — must exactly match the redirect URL registered in the GHL app |
 
 ### 🗄️ Database — auto-provided
@@ -62,7 +62,7 @@ fill in once the platform gives you a live URL — then redeploy).
 
 ### 2. OAuth install
 - **Do:** In the GHL dev portal, install the app on a **test sub-account**.
-- **Pass:** You land on the **"✅ Voxlink Invoice Pro installed"** page, and logs show
+- **Pass:** You land on the **"✅ BillWright installed"** page, and logs show
   `[oauth] Installed for location=… company=…`.
 - **If it fails:** `redirect_uri` mismatch (it must equal the registered redirect URL exactly),
   or wrong Client ID/Secret.
